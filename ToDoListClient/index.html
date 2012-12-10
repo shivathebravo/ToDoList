@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>ToDo list example wih djondb, knockout.js and twitter bootstrap</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ToDo list example wih djondb, knockout.js and twitter bootstrap">
+    <meta name="author" content="Lacho">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: #f5f5f5;
+        }
+
+        .form-todo {
+            max-width: 600px;
+            padding: 19px 29px 29px;
+            margin: 0 auto 20px;
+            background-color: #fff;
+            border: 1px solid #e5e5e5;
+            border-radius: 5px;
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+        }
+
+            .form-todo input[type="text"] {
+                font-size: 16px;
+                height: auto;
+                margin-bottom: 15px;
+                padding: 7px 9px;
+            }
+    </style>
+    <link href="assets/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="assets/css/styles.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Fav and touch icons -->
+</head>
+
+<body>
+    <div class="header">
+    </div>
+    <div class="container form-todo">
+        <div class="row-fluid">
+            <div id="content" class="span12">
+                <form data-bind="submit: addTask">
+                    <h2 class="form-todo-heading">ToDo List</h2>
+                    <input type="text" name="task-input" id="task-input" data-bind="value: newTask" class="input-block-level" placeholder="What needs to be done?" />
+                </form>
+
+                <div class="todos">
+                    <ul id="todo-list" data-bind="foreach: tasks">
+                        <li>
+                            <div class="todo">
+                                <div data-bind="css: { completed: completion() == true }">
+                                    <a href="javascript:void(0)" class="checkbox" data-bind="click: completeTask"></a>
+                                    <span class="todo-text" data-bind="text: task"></span>
+                                    <span class="todo-date" data-bind="text: date"></span>
+                                    <a href="javascript:void(0)" class="todo-destroy" data-bind="click: $root.removeTask">&times;</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+
+                    You have <b><span class="tasks-left" data-bind="text: completedTasks()"></span></b> tasks to do
+		            &nbsp;&nbsp;<b><span data-bind="visible: completedTasks() == 0">- its beer time!</span></b>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer" style="margin-top: 50px;">
+            <p class="pull-right"></p>
+            <p>
+                <a href="http://djondb.com/">djondb</a> sample application.
+                <br>
+                Technology stack: <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>, 
+            <a href="http://knockoutjs.com/" target="_blank">Knockout.js</a>,        
+            <a href="http://www.asp.net/web-api" target="_blank">ASP.NET Web API</a>,
+            and <a href="http://djondb.com/" target="_blank">djondb</a>.<br>
+                Get the <a href="#">source code</a> from GitHub.
+                <br>
+            </p>
+        </footer>
+    </div>
+    <!-- /container -->
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery-1.8.3.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/knockout-2.2.0.js"></script>
+
+    <script>
+        var serverUrl = "http://localhost:50123/api/Task/";
+
+        function todoTask(id, task, rawDate) {
+            var self = this;
+            self._id = id;
+            self.task = task;
+            self.rawDate = rawDate;
+            self.completion = ko.observable(false);
+
+            self.date = ko.computed(function () {
+                var day = rawDate.getDate();
+                var month = rawDate.getMonth() + 1;
+                var year = rawDate.getFullYear();
+                var dateFull = month + '/' + day + '/' + year;
+                return dateFull;
+            });
+
+            self.completeTask = function () {
+                var isDone = self.completion() ? 0 : 1;
+
+                $.ajax({
+                    type: "PUT",
+                    url: serverUrl + self._id,
+                    data: { _id: self._id, task: self.task, completion: isDone },
+                    success: function () {
+                        if (self.completion() == false)
+                            self.completion(true);
+                        else
+                            self.completion(false);
+                    },
+                    failure: function (errMsg) { console.log(errMsg); }
+                });
+            };
+        }
+
+        function taskViewModel() {
+            var self = this;
+            self.newTask = ko.observable('');
+            self.tasks = ko.observableArray([]);
+
+            self.completedTasks = ko.computed(function () {
+                var total = 0;
+                var i = 0;
+                for (i; i < self.tasks().length; i++) {
+                    if (self.tasks()[i].completion() == false) {
+                        total++;
+                    }
+                }
+
+                return total;
+            });
+
+            self.addTask = function () {
+                var newTask = new todoTask("", self.newTask(), new Date());
+                newTask.completion(false);
+
+                $.ajax({
+                    type: "POST",
+                    url: serverUrl,
+                    data: ko.toJSON(newTask),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: function (retData) {
+                        newTask._id = retData["_id"];
+                        self.tasks.push(newTask);
+                        self.newTask('');
+                    },
+                    failure: function (errMsg) { console.log(errMsg); }
+                });
+            }
+
+            self.removeTask = function () {
+                var removedTask = this;
+
+                $.ajax({
+                    type: "DELETE",
+                    url: serverUrl + removedTask._id,
+                    success: function () {
+                        self.tasks.remove(removedTask);
+                    },
+                    failure: function (errMsg) { console.log(errMsg); }
+                });
+            }
+
+            $.getJSON(serverUrl, function (allData) {
+                var mappedTasks = $.map(allData, function (item) {
+                    var newTodoTask = new todoTask(item["_id"], item["task"], new Date(item["rawDate"]));
+                    newTodoTask.completion(item["completion"]);
+                    return newTodoTask;
+                });
+
+                self.tasks(mappedTasks);
+            });
+
+        }
+
+        ko.applyBindings(new taskViewModel());
+        $("#todo-list").animate({ opacity: 1 }, 1000);
+    </script>
+</body>
+</html>

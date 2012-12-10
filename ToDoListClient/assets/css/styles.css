@@ -1,0 +1,75 @@
+a:hover {
+    text-decoration: none;
+}
+
+ol, ul {
+    list-style: none;
+}
+
+#todo-list li {
+    padding: 12px 20px 11px 0;
+    position: relative;
+    font-size: 20px;
+    line-height: 1.1em;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+    #todo-list li:after {
+        content: "\0020";
+        display: block;
+        height: 0;
+        clear: both;
+        overflow: hidden;
+        visibility: hidden;
+    }
+
+#todo-list .todo-date {
+    display: inline-block;
+    font-size: 18px;
+    font-style: italic;
+    color: #d6d6d6;
+}
+
+#todo-list .checkbox {
+    width: 5px;
+	height: 5px;
+    border: 1px solid #666666;
+    display: inline-block;
+    color: #777777;
+}
+
+#todo-list .completed {
+    opacity: .6;
+}
+
+    #todo-list .completed .todo-text, #todo-list .completed .todo-date {
+        text-decoration: line-through;
+        color: #777777;
+    }
+
+    #todo-list .completed .checkbox {
+        text-align: center;
+        background-color: #777777;
+    }
+
+
+#todo-list .todo-destroy {
+    bottom: 15px;
+    cursor: pointer;
+    color: red;
+    display: none;
+    height: 20px;
+    position: absolute;
+    right: 25px;
+    text-decoration: none;
+    width: 20px;
+}
+
+#todo-list li:hover .todo-destroy {
+    display: block;
+}
+
+#todo-list .todo-destroy:hover {
+    background-position: 0 -20px;
+}
+
